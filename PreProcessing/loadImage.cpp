@@ -5,6 +5,7 @@
 
 
 
+// DONT USE THIS IT WAS REWRITTEN IN C FOR EASIER USE
 class loadImg{
     public:
 
@@ -49,9 +50,9 @@ class loadImg{
 
 
 int main(){
-    // loadImg forward; 
-    // std::vector<std::vector<double>> img1 = forward.loadImage("forward.txt"); 
+    loadImg forward; 
+    std::vector<std::vector<double>> img1 = forward.loadImage("forward.txt"); 
 
-    // forward.printArray(img1); 
+    forward.printArray(img1); 
 
 }
