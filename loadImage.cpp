@@ -8,6 +8,7 @@
 class loadImg{
     public:
 
+    // Create a 2D vector array with size 320x240
     std::vector<std::vector<double>> array; 
     loadImg(){
         array.resize(320, std::vector<double>(240)); 
@@ -15,50 +16,42 @@ class loadImg{
 
     std::vector<std::vector<double>> loadImage(const std::string&filename){
 
+        // Open file
         std::ifstream file(filename);
+
+        // SAFE CODING :)
         if(!file.is_open()) {
             std::cout << "Error opening file: " << filename << std::endl; 
             return array; 
         }
 
+        // Load pixels into array 
         for(int i = 0; i < 320; i++){
             for(int j = 0; j < 240; j++){
-                if(!
                 file >> array[i][j];
-
-                // if(!(file >> array[i][j]))
-                // std::cout << "Error reading pixel value" << std::endl;
-                // file.close();
-                // return array; 
             }   
         }
     file.close(); 
     return array; 
-}
-    // void printPixels() {
-    //     for (int i = 0; i < 240; ++i) {
-    //         for (int j = 0; j < 320; ++j) {
-    //             std::cout << array[i][j] << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
+    }
+
+    // Helper function to print out array 
+    void printArray(std::vector<std::vector<double>> array){
+        for(int i = 0; i < 320; i++){
+            for(int j = 0; j < 240; j++){
+                std::cout << array[i][j] << " "; 
+            }
+            std::cout << std::endl; 
+        }
+    }
 }; 
 
 
 
 int main(){
-    loadImg forward; 
-    std::vector<std::vector<double>> img1 = forward.loadImage("forward.txt"); 
-    //forward.printPixels(); 
+    // loadImg forward; 
+    // std::vector<std::vector<double>> img1 = forward.loadImage("forward.txt"); 
 
-    // for(const auto& row : img1){
-    //     for(int pixel : row){
-    //     std::cout << pixel << " "; 
-    //     }
-    //     std::cout << std::endl; 
-    // }
+    // forward.printArray(img1); 
 
-    int value = img1[7][0];
-    std::cout << value << std::endl;  
 }
