@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <time.h>
 
 typedef struct {
     int array[320][240];
@@ -68,27 +68,33 @@ int SAD(int A[16][16], int B[16][16], int x, int y, int r, int s, int bestMatch)
 }
 
 int main() {
+    //ARM compiler does not like declaring a variable within a for loop so its done here
+    int i, j, x, y; 
+    int blockA[16][16]; // current block for comparison
+    int blockB[16][16]; //reference block *currently static*
+    int bestMatch = 200; //Keeping track of lowest SAD
+
     // Load reference frame
     loadImg reference;
     loadImage(&reference, "reference.txt");
-
-    // Load reference block
-
-    // I want to load the first 16x16 block of the reference array into a new one
-    int blockB[16][16];
-
-    for(int i = 0; i < 16; i++){
-        for(int j = 0; j < 16; j++){
-            blockB[i][j] = reference.array[i][j];
-        }
-    }
 
     //Load forward frame 
     loadImg forward;
     loadImage(&forward, "forward.txt");
 
-    int blockA[16][16];
+    // Clock to keep track of execution time
+    clock_t start, end; 
+    double execution_time; 
+    start = clock(); 
 
+
+    // Load reference block
+    // I want to load the first 16x16 block of the reference array into a new one
+    for(i = 0; i < 16; i++){
+        for(j = 0; j < 16; j++){
+            blockB[i][j] = reference.array[i][j];
+        }
+    }
 
     /*
     (320 - 16 = 304)
@@ -97,14 +103,12 @@ int main() {
     These x,y loops loop through all possible x,y positions of the forward frame (block A)
     */
 
-    int bestMatch = 200; 
-
-    for(int x = 1; x < 304; x++){
-        for(int y = 1; y < 224; y++){
+    for(x = 1; x < 304; x++){
+        for(y = 1; y < 224; y++){
 
             // Load 16x16 block A from forward image
-            for(int i = 0; i < 16; i++){
-                for(int j = 0; j < 16; j++){
+            for(i = 0; i < 16; i++){
+                for(j = 0; j < 16; j++){
                     blockA[i][j] = forward.array[i][j];
                 }
             }
@@ -115,7 +119,13 @@ int main() {
         }
     }
 
+    // print lowest SAD value *add motion vector here*
     printf("Best Match: %d\n", bestMatch);
+
+    // end and print execution time
+    end = clock(); 
+    execution_time = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("Execution Time: %f\n", execution_time);
 
     return 0;
 }
