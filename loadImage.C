@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
-#include "sad.c"
+#include "sw_sad_unoptimized.c"
+#include "sw_sad_loop_unrolled.c"
 
 typedef struct {
     int array[320][240];
