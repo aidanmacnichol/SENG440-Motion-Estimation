@@ -1,127 +1,146 @@
+	.arch armv4t
+	.fpu softvfp
+	.eabi_attribute 20, 1
+	.eabi_attribute 21, 1
+	.eabi_attribute 23, 3
+	.eabi_attribute 24, 1
+	.eabi_attribute 25, 1
+	.eabi_attribute 26, 2
+	.eabi_attribute 30, 6
+	.eabi_attribute 18, 4
 	.file	"sw_sad_loop_unrolled.c"
 	.text
-	.globl	SAD_unrolled
-	.def	SAD_unrolled;	.scl	2;	.type	32;	.endef
-	.seh_proc	SAD_unrolled
+	.align	2
+	.global	SAD_unrolled
+	.type	SAD_unrolled, %function
 SAD_unrolled:
-	pushq	%rbp
-	.seh_pushreg	%rbp
-	movq	%rsp, %rbp
-	.seh_setframe	%rbp, 0
-	subq	$32, %rsp
-	.seh_stackalloc	32
-	.seh_endprologue
-	movq	%rcx, 16(%rbp)
-	movq	%rdx, 24(%rbp)
-	movl	%r8d, 32(%rbp)
-	movl	%r9d, 40(%rbp)
-	movl	$0, -4(%rbp)
-	movl	$0, -8(%rbp)
-	jmp	.L2
+	@ Function supports interworking.
+	@ args = 12, pretend = 0, frame = 40
+	@ frame_needed = 1, uses_anonymous_args = 0
+	@ link register save eliminated.
+	str	fp, [sp, #-4]!
+	add	fp, sp, #0
+	sub	sp, sp, #44
+	str	r0, [fp, #-32]
+	str	r1, [fp, #-36]
+	str	r2, [fp, #-40]
+	str	r3, [fp, #-44]
+	mov	r3, #0
+	str	r3, [fp, #-16]
+	mov	r3, #0
+	str	r3, [fp, #-12]
+	b	.L2
 .L9:
-	movl	$0, -12(%rbp)
-	jmp	.L3
+	mov	r3, #0
+	str	r3, [fp, #-8]
+	b	.L3
 .L8:
-	movl	32(%rbp), %edx
-	movl	-8(%rbp), %eax
-	addl	%edx, %eax
-	cltq
-	salq	$6, %rax
-	movq	%rax, %rdx
-	movq	16(%rbp), %rax
-	addq	%rax, %rdx
-	movl	40(%rbp), %ecx
-	movl	-12(%rbp), %eax
-	addl	%ecx, %eax
-	cltq
-	movl	(%rdx,%rax,4), %edx
-	movl	32(%rbp), %ecx
-	movl	48(%rbp), %eax
-	addl	%eax, %ecx
-	movl	-8(%rbp), %eax
-	addl	%ecx, %eax
-	cltq
-	salq	$6, %rax
-	movq	%rax, %rcx
-	movq	24(%rbp), %rax
-	addq	%rax, %rcx
-	movl	40(%rbp), %r8d
-	movl	56(%rbp), %eax
-	addl	%eax, %r8d
-	movl	-12(%rbp), %eax
-	addl	%r8d, %eax
-	cltq
-	movl	(%rcx,%rax,4), %eax
-	subl	%eax, %edx
-	movl	%edx, -16(%rbp)
-	movl	32(%rbp), %edx
-	movl	-8(%rbp), %eax
-	addl	%edx, %eax
-	cltq
-	salq	$6, %rax
-	movq	%rax, %rdx
-	movq	16(%rbp), %rax
-	addq	%rax, %rdx
-	movl	40(%rbp), %ecx
-	movl	-12(%rbp), %eax
-	addl	%ecx, %eax
-	addl	$1, %eax
-	cltq
-	movl	(%rdx,%rax,4), %edx
-	movl	32(%rbp), %ecx
-	movl	48(%rbp), %eax
-	addl	%eax, %ecx
-	movl	-8(%rbp), %eax
-	addl	%ecx, %eax
-	cltq
-	salq	$6, %rax
-	movq	%rax, %rcx
-	movq	24(%rbp), %rax
-	addq	%rax, %rcx
-	movl	40(%rbp), %r8d
-	movl	56(%rbp), %eax
-	addl	%eax, %r8d
-	movl	-12(%rbp), %eax
-	addl	%r8d, %eax
-	addl	$1, %eax
-	cltq
-	movl	(%rcx,%rax,4), %eax
-	subl	%eax, %edx
-	movl	%edx, -20(%rbp)
-	cmpl	$0, -16(%rbp)
-	jns	.L4
-	movl	-16(%rbp), %eax
-	subl	%eax, -4(%rbp)
-	jmp	.L5
+	ldr	r2, [fp, #-40]
+	ldr	r3, [fp, #-12]
+	add	r3, r2, r3
+	mov	r2, r3, asl #6
+	ldr	r3, [fp, #-32]
+	add	r1, r3, r2
+	ldr	r2, [fp, #-44]
+	ldr	r3, [fp, #-8]
+	add	r3, r2, r3
+	ldr	r0, [r1, r3, asl #2]
+	ldr	r2, [fp, #-40]
+	ldr	r3, [fp, #4]
+	add	r2, r2, r3
+	ldr	r3, [fp, #-12]
+	add	r3, r2, r3
+	mov	r2, r3, asl #6
+	ldr	r3, [fp, #-36]
+	add	r1, r3, r2
+	ldr	r2, [fp, #-44]
+	ldr	r3, [fp, #8]
+	add	r2, r2, r3
+	ldr	r3, [fp, #-8]
+	add	r3, r2, r3
+	ldr	r3, [r1, r3, asl #2]
+	rsb	r3, r3, r0
+	str	r3, [fp, #-24]
+	ldr	r2, [fp, #-40]
+	ldr	r3, [fp, #-12]
+	add	r3, r2, r3
+	mov	r2, r3, asl #6
+	ldr	r3, [fp, #-32]
+	add	r1, r3, r2
+	ldr	r2, [fp, #-44]
+	ldr	r3, [fp, #-8]
+	add	r3, r2, r3
+	add	r3, r3, #1
+	ldr	r0, [r1, r3, asl #2]
+	ldr	r2, [fp, #-40]
+	ldr	r3, [fp, #4]
+	add	r2, r2, r3
+	ldr	r3, [fp, #-12]
+	add	r3, r2, r3
+	mov	r2, r3, asl #6
+	ldr	r3, [fp, #-36]
+	add	r1, r3, r2
+	ldr	r2, [fp, #-44]
+	ldr	r3, [fp, #8]
+	add	r2, r2, r3
+	ldr	r3, [fp, #-8]
+	add	r3, r2, r3
+	add	r3, r3, #1
+	ldr	r3, [r1, r3, asl #2]
+	rsb	r3, r3, r0
+	str	r3, [fp, #-20]
+	ldr	r3, [fp, #-24]
+	cmp	r3, #0
+	bge	.L4
+	ldr	r3, [fp, #-16]
+	ldr	r2, [fp, #-24]
+	rsb	r3, r2, r3
+	str	r3, [fp, #-16]
+	b	.L5
 .L4:
-	movl	-16(%rbp), %eax
-	addl	%eax, -4(%rbp)
+	ldr	r3, [fp, #-16]
+	ldr	r2, [fp, #-24]
+	add	r3, r3, r2
+	str	r3, [fp, #-16]
 .L5:
-	cmpl	$0, -20(%rbp)
-	jns	.L6
-	movl	$0, -20(%rbp)
-	jmp	.L7
+	ldr	r3, [fp, #-20]
+	cmp	r3, #0
+	bge	.L6
+	mov	r3, #0
+	str	r3, [fp, #-20]
+	b	.L7
 .L6:
-	movl	-20(%rbp), %eax
-	addl	%eax, -4(%rbp)
+	ldr	r3, [fp, #-16]
+	ldr	r2, [fp, #-20]
+	add	r3, r3, r2
+	str	r3, [fp, #-16]
 .L7:
-	addl	$2, -12(%rbp)
+	ldr	r3, [fp, #-8]
+	add	r3, r3, #2
+	str	r3, [fp, #-8]
 .L3:
-	cmpl	$15, -12(%rbp)
-	jle	.L8
-	addl	$1, -8(%rbp)
+	ldr	r3, [fp, #-8]
+	cmp	r3, #15
+	ble	.L8
+	ldr	r3, [fp, #-12]
+	add	r3, r3, #1
+	str	r3, [fp, #-12]
 .L2:
-	cmpl	$15, -8(%rbp)
-	jle	.L9
-	movl	-4(%rbp), %eax
-	cmpl	64(%rbp), %eax
-	jge	.L10
-	movl	-4(%rbp), %eax
-	movl	%eax, 64(%rbp)
+	ldr	r3, [fp, #-12]
+	cmp	r3, #15
+	ble	.L9
+	ldr	r2, [fp, #-16]
+	ldr	r3, [fp, #12]
+	cmp	r2, r3
+	bge	.L10
+	ldr	r3, [fp, #-16]
+	str	r3, [fp, #12]
 .L10:
-	movl	64(%rbp), %eax
-	addq	$32, %rsp
-	popq	%rbp
-	ret
-	.seh_endproc
-	.ident	"GCC: (Rev6, Built by MSYS2 project) 13.1.0"
+	ldr	r3, [fp, #12]
+	mov	r0, r3
+	add	sp, fp, #0
+	ldmfd	sp!, {fp}
+	bx	lr
+	.size	SAD_unrolled, .-SAD_unrolled
+	.ident	"GCC: (Sourcery G++ Lite 2008q3-72) 4.3.2"
+	.section	.note.GNU-stack,"",%progbits
