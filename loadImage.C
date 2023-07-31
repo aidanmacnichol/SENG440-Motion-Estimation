@@ -2,6 +2,7 @@
 #include <time.h>
 #include "sw_sad_unoptimized.c"
 #include "sw_sad_loop_unrolled.c"
+#include "hw_sad_reentrant.c"
 
 typedef struct {
     int array[320][240];
@@ -110,25 +111,28 @@ int main() {
     double execution_time2; 
     start2 = clock(); 
 
-    for(x = 1; x < 304; x++){
-        for(y = 1; y < 224; y++){
 
-            // Load 16x16 block A from forward image
-            for(i = 0; i < 16; i++){
-                for(j = 0; j < 16; j++){
-                    blockA[i][j] = forward.array[i][j];
-                }
-            }
-        // Perform SAD current block
-        // in this example with only one reference block the current position is the same as the motion vector
-        bestMatch = SAD_unrolled(blockA, blockB, 0, 0, 0, 0, bestMatch);
-        
+    // Load Refrence block
+    uint8_t blockB_hw[8][8];
+    for(i = 0; i < 8; i++){
+        for(j = 0; j < 8; j++){
+            blockB_hw[i][j] = reference.array[i][j];
         }
     }
+
+    uint8_t blockA_hw[8][8]; 
+    for(i = 7; i < 16; i++){
+        for(j = 7; j < 16; j++){
+            blockA_hw[i][j] = forward.array[i][j]; 
+        }
+    }
+
+    int result = neon_sad_block_8x8((uint8_t*)blockA_hw, (uint8_t*)blockB_hw); 
+
+    printf("HW TEST RESULT: %d\n", result); 
     end2 = clock(); 
     execution_time2 = ((double) (end2 - start2)) / CLOCKS_PER_SEC;
-    printf("Execution Time - unrolled SAD: %f\n", execution_time2);
-
+    printf("Execution Time - hw SAD: %f\n", execution_time2);
 
     return 0;
 }
