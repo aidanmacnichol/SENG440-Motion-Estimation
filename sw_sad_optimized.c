@@ -1,23 +1,27 @@
-#include <stdio.h> 
+#include <stdio.h>
+/*
+Perform SAD on two 16x16 blocks, B is the reference block and A is the current comparison block
 
-int sw_SAD_optimized(int A[16][16], int B[16][16], int x, int y, int r, int s, int bestMatch) {
-    int diff1, diff2, sad = 0;
-    int i, j;
+(x,y) is the position of current block
+(r,s) is the motion vector (displacement of current block A relative to reference block B)
+*/
 
-    for (i = 0; i < 16; i++) {
-        for (j = 0; j < 16; j += 2) {
-            diff1 = A[x + i][y + j] - B[(x + r) + i][(y + s) + j];
-            diff2 = A[x + i][y + j + 1] - B[(x + r) + i][(y + s) + j + 1];
-
-            // Guarded Operations
-            sad += (diff1 < 0) ? -diff1 : diff1;
-            sad += (diff2 < 0) ? -diff2 : diff2;
+int SAD(int A[16][16], int B[16][16], int x, int y, int r, int s, int bestMatch){
+    int diff, sad = 0; 
+    int i, j; 
+    for(i=0; i<16; i++){
+        for(j=0; j<16; j++){
+            diff = A[x+i][y+j] - B[(x+r) + i][(y+s) + j]; 
+            if(diff < 0){
+                diff -= diff;
+            } 
+        sad += diff; 
         }
     }
-
-    if (sad < bestMatch) {
+    //printf("SAD: %d\n", sad);
+    // Check if current SAD is better than the best match
+    if(sad < bestMatch){
         bestMatch = sad;
     }
-
-    return bestMatch;
+    return bestMatch; 
 }

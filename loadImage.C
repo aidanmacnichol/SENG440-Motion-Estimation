@@ -57,14 +57,14 @@ void printArray(loadImg* img) {
 int main() {
 
     // Choose what code to run
-    int state = SW_SAD_UNOPTIMIZED; 
+    int state = HW_SAD_REENTRANT; 
 
 
     //ARM compiler does not like declaring a variable within a for loop so its done here
     int i, j, x, y, p; 
     int blockA[16][16]; // current block for comparison
     int blockB[16][16]; //reference block *currently static*
-    int bestMatch = 1000; //Keeping track of lowest SAD
+    int bestMatch = 2000; //Keeping track of lowest SAD
 
     int result; //for hw sad
 
@@ -265,9 +265,6 @@ int main() {
         uint32_t sum = vget_lane_u32(acc2, 0) + vget_lane_u32(acc2, 1); 
 
         result = (int)sum; 
-
-
-
 
         printf("HW TEST RESULT: %d\n", result); 
 
