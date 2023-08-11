@@ -5,9 +5,8 @@ import numpy as np
 # Load images in GrayScale
 referenceImg = cv2.imread('reference.jpg', cv2.IMREAD_GRAYSCALE)
 
-print(type(referenceImg))
 # Open text file to store pixel values
-referenceFile = open('test.txt', 'r+')
+referenceFile = open('reference.txt', 'r+')
 
 # # Convert NumpY array to type int for easier manipulation
 referenceImage = referenceImg.astype(int)
@@ -17,6 +16,7 @@ np.savetxt(referenceFile, referenceImage, fmt='%d')
 
 # Close file
 referenceFile.close()
+
 
 # Repeat the same steps for the forward frame
 forwardImg = cv2.imread('forward.jpg', cv2.IMREAD_GRAYSCALE)

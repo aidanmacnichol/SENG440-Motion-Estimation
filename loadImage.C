@@ -2,12 +2,18 @@
 #include <time.h>
 #include "sw_sad_unoptimized.c"
 #include "sw_sad_loop_unrolled.c"
+#include "sw_sad_optimized.c"
+#include "hw_sad_nonreentrant.c"
 #include "hw_sad_reentrant.c"
 
-#define sw_sad_unoptimized 0
-#define sw_sad_unrolled 1
-#define hw_sad_reentrant 2
-#define hw_sad_nonreentrant 3
+
+
+//For the switch statement
+#define SW_SAD_UNOPTIMIZED 0
+#define SW_SAD_UNROLLED 1
+#define SW_SAD_OPTIMIZED 2
+#define HW_SAD_NONREENTRANT 3
+#define HW_SAD_REENTRANT 4
 
 typedef struct {
     int array[320][240];
@@ -17,7 +23,7 @@ typedef struct {
 Load greyscale pixel values into a 320x240 array of integers given a filename
 */
 void loadImage(loadImg* img, const char* filename) {
-    int i, j;
+    int x, y;
 
     //Open file, return error if it cannot
     FILE* file = fopen(filename, "r");
@@ -26,9 +32,9 @@ void loadImage(loadImg* img, const char* filename) {
         return;
     }
     // Write pixel values to array
-    for (i = 0; i < 320; i++) {
-        for (j = 0; j < 240; j++) {
-            fscanf(file, "%d", &img->array[i][j]);
+    for (y = 0; y < 240; y++) {
+        for (x = 0; x < 320; x++) {
+            fscanf(file, "%d", &img->array[x][y]);
         }
     }
     fclose(file);
@@ -38,10 +44,10 @@ void loadImage(loadImg* img, const char* filename) {
 Print array for testing purposes
 */
 void printArray(loadImg* img) {
-    int i, j;
-    for (i = 0; i < 320; i++) {
-        for (j = 0; j < 240; j++) {
-            printf("%d ", img->array[i][j]);
+    int x, y;
+    for (y = 0; y < 240; y++) {
+        for (x = 0; x < 320; x++) {
+            printf("%d ", img->array[x][y]);
         }
         printf("\n");
     }
@@ -51,17 +57,22 @@ void printArray(loadImg* img) {
 int main() {
 
     // Choose what code to run
-    int state = sw_sad_unoptimized; 
+    int state = SW_SAD_UNOPTIMIZED; 
 
 
     //ARM compiler does not like declaring a variable within a for loop so its done here
-    int i, j, x, y; 
+    int i, j, x, y, p; 
     int blockA[16][16]; // current block for comparison
     int blockB[16][16]; //reference block *currently static*
-    int bestMatch = 200; //Keeping track of lowest SAD
+    int bestMatch = 1000; //Keeping track of lowest SAD
 
-    clock_t start, end; 
-    double execution_time; 
+    int result; //for hw sad
+
+    //For timing execution
+    struct timespec start, end; 
+    double execution_time;
+    double total_time = 0.0; 
+    double average_execution_time;
 
     // Load reference frame
     loadImg reference;
@@ -75,120 +86,194 @@ int main() {
     {
 
 //--------------Software SAD UNOPTIMIZED-----------------------------------------------------------------------------------------------        
-        case sw_sad_unoptimized:
+        case SW_SAD_UNOPTIMIZED:
 
             // Load reference block
-            for(i = 0; i < 16; i++){
-                for(j = 0; j < 16; j++){
-                    blockB[i][j] = reference.array[i][j];
+            for(y = 0; y < 16; y++){
+                for(x = 0; x < 16; x++){
+                    blockB[x][y] = reference.array[x][y];
                 }
             }
-
-            start = clock(); 
-        
-            // Searches blocks 3 out from the reference position
-            for(x = 16; x < 64; x+=16){
-                for(y = 16; y < 64; y+=16){
+         
+ 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            for(p=0; p < 1000; p++){
                 
                     // Load 16x16 block A from forward image
-                    for(i = 0; i < 16; i++){
-                        for(j = 0; j < 16; j++){
-                            blockA[i][j] = forward.array[i+x][j+y];
+                    for(y = 0; y < 16; y++){
+                        for(x = 0; x < 16; x++){
+                            blockA[x][y] = forward.array[x][y];
                         }
                     }
                      // Perform SAD current block
                      // in this example with only one reference block the current position is the same as the motion vector
                      bestMatch = SAD(blockA, blockB, 0, 0, 0, 0, bestMatch);
-                }
-            }
-                    // print lowest SAD value *add motion vector here*
-                    printf("Best Match: %d\n", bestMatch);
-                    // end and print execution time
-                    end = clock(); 
-                    execution_time = ((double) (end - start)) / CLOCKS_PER_SEC;
-                    printf("Execution Time - SW SAD unoptimized: %f\n", execution_time);
-                    
-                    break; 
-
-
-//-----------Unrolled Software SAD------------------------------------------------------------------------------------------        
-        case sw_sad_unrolled: 
-
-            // Load reference block
-            for(i = 0; i < 16; i++){
-                for(j = 0; j < 16; j++){
-                    blockB[i][j] = reference.array[i][j];
-                }
-            }
-
-            // start clock
-            start = clock(); 
-
-            for(x = 16; x < 64; x+=16){
-                for(y = 16; y < 64; y+=16){
-                
-                    // Load 16x16 block A from forward image
-                    for(i = 0; i < 16; i++){
-                        for(j = 0; j < 16; j++){
-                            blockA[i][j] = forward.array[i+x][j+y];
-                        }
-                    }
-                // Perform SAD current block
-                // in this example with only one reference block the current position is the same as the motion vector
-                bestMatch = SAD_unrolled(blockA, blockB, 0, 0, 0, 0, bestMatch); 
-                }
             }
 
             // print lowest SAD value *add motion vector here*
             printf("Best Match: %d\n", bestMatch);
 
             // end and print execution time
-            end = clock(); 
-            execution_time = ((double) (end - start)) / CLOCKS_PER_SEC;
-            printf("Execution Time - SW SAD unrolled: %f\n", execution_time);
+            clock_gettime(CLOCK_MONOTONIC, &end); 
+            execution_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+            printf("Execution Time SW UNOPTIMIZED: %f seconds\n", execution_time);
+            
+            break; 
+
+
+//-----------Unrolled Software SAD------------------------------------------------------------------------------------------        
+        case SW_SAD_UNROLLED: 
+
+            // Load reference block
+            for(y = 0; y < 16; y++){
+                for(x = 0; x < 16; x++){
+                    blockB[x][y] = reference.array[x][y];
+                }
+            } 
+
+            // start clock
+            clock_gettime(CLOCK_MONOTONIC, &start); 
+
+            for(p = 0; p < 1000; p++){
+                
+                // Load 16x16 block A from forward image
+                for(y = 0; y < 16; y++){
+                    for(x = 0; x < 16; x++){
+                        blockA[x][y] = forward.array[x][y];
+                    }
+                }
+                // Perform SAD current block
+                bestMatch = SAD_unrolled(blockA, blockB, 0, 0, 0, 0, bestMatch); 
+            }
+
+            // print lowest SAD value *add motion vector here*
+            printf("Best Match: %d\n", bestMatch);
+
+            //end clock and record execution time for 1000 runs
+            clock_gettime(CLOCK_MONOTONIC, &end); 
+            execution_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+
+            // end and print execution time
+            average_execution_time = total_time / 1000.0; 
+            printf("Execution Time SW UNROLLED: %f seconds\n", execution_time);
 
             break; 
     
+//-----------Optimized Software SAD------------------------------------------------------------------------------------------        
+        case SW_SAD_OPTIMIZED: 
 
-
-//--------------HW SAD---------------------------------------------------------------------------------------
-   // Clock to keep track of execution time 
-
-    case hw_sad_nonreentrant:
-        ; 
-        uint8_t blockB_hw[4][16];
-        uint8_t blockA_hw[4][16]; 
-        int result; 
-
-        // Load Reference block
-        for(i = 0; i < 4; i++){
-            for(j = 0; j < 16; j++){
-                blockB_hw[i][j] = reference.array[i][j];
-            }
-        }
-
-        start = clock();
-
-        for(x = 16; x < 64; x += 16){
-            for(y=4; y < 64; y+=4){
-
-                //Load forward block
-                for(i = 0; i < 4; i++){
-                    for(j = 0; j < 16; j++){
-                        blockA_hw[i][j] = forward.array[i+x][j+y]; 
-                    }
+            // Load reference block
+            for(y = 0; y < 16; y++){
+                for(x = 0; x < 16; x++){
+                    blockB[x][y] = reference.array[x][y];
                 }
             }
-            result = neon_sad_block_8x8((uint8_t*)blockA_hw, (uint8_t*)blockB_hw);
-            printf("HW TEST RESULT: %d\n", result); 
+
+            //Average execution time of 1000 operations
+            for(p = 0; p < 1000; p++){
+                // start clock  
+                clock_gettime(CLOCK_MONOTONIC, &start);
+                
+                    // Load 16x16 block A from forward image
+                    for(y = 0; y < 16; y++){
+                        for(x = 0; x < 16; x++){
+                            blockA[x][y] = forward.array[x][y];
+                        }
+                    }
+                // Perform SAD current block
+                bestMatch = sw_SAD_optimized(blockA, blockB, 0, 0, 0, 0, bestMatch); 
+
+                clock_gettime(CLOCK_MONOTONIC, &end); 
+                execution_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+                total_time += execution_time;
+    
+            }
+
+            printf("Sum of Absolute Differences: %d\n", bestMatch);
+
+            // end and print execution time
+            average_execution_time = total_time / 1000.0; 
+            printf("Execution Time SW OPTIMIZED: %f seconds\n", average_execution_time);
+
+            break; 
+
+
+//--------------HW SAD NON-REENTRANT-------------------------------------------------------------------------------
+   // Clock to keep track of execution time 
+
+    case HW_SAD_NONREENTRANT:
+    ; //needed to declare variables after
+        
+        uint8_t blockB_hw[16];
+        uint8_t blockA_hw[16]; 
+
+        int x; 
+
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        
+        for(p=0; p<1000; p++){ 
+                for(y = 0; y < 16; y++){
+                    for(x = 0; x < 16; x++){
+                        blockA_hw[x] = forward.array[x][y];
+                        blockB_hw[x] = reference.array[x][y];
+                    }
+                    result += hw_sad_nonreentrant(blockA_hw, blockB_hw); 
+                }
         }
+
+        printf("HW TEST RESULT: %d\n", result); 
+
+        clock_gettime(CLOCK_MONOTONIC, &end); 
+        execution_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("Execution Time HW NON-REENTRANT: %f seconds\n", execution_time);
+
+        break; 
+
+
+//--------------HW SAD REENTRANT-----------------------------------------------------------------------------------
+    case HW_SAD_REENTRANT:
+    ; // needed so I can declare variables after
+        
+        uint8_t blockB_rent[16];
+        uint8_t blockA_rent[16];  
+
+        uint8x16_t result_buffer = vdupq_n_u8(0); 
+
+
+        clock_gettime(CLOCK_MONOTONIC, &start); 
+                for(y = 0; y < 16; y++){
+                    for(x = 0; x < 16; x++){
+                        blockA_rent[x] = forward.array[x][y];
+                        blockB_rent[x] = reference.array[x][y];
+                    } 
+                    hw_sad_reentrant(blockA_rent, blockB_rent, &result_buffer);
+                }
+
+        /*sum the final vector
+        Adapted from: https://developer.arm.com/documentation/dui0472/m/Compiler-Features/Using-NEON-intrinsics
+        */ 
+        //split the 16x8 result vector into two 8x8 vectors
+        uint8x8_t result_low = vget_low_u8(result_buffer);
+        uint8x8_t result_high = vget_high_u8(result_buffer);
+
+        //sum the lower and upper halves of the result vector
+        uint8x8_t acc = vadd_u8(result_low, result_high);
+        uint16x4_t acc1 = vpaddl_u8(acc);
+        uint32x2_t acc2 = vpaddl_u16(acc1);
+
+        //calculate the total
+        uint32_t sum = vget_lane_u32(acc2, 0) + vget_lane_u32(acc2, 1); 
+
+        result = (int)sum; 
+
+
 
 
         printf("HW TEST RESULT: %d\n", result); 
-        end = clock(); 
-        // printf("clocks: %d, %d\n", (int)end, (int)start); 
-        execution_time = ((double)(end - start)) / CLOCKS_PER_SEC;
-        printf("Execution Time - hw SAD: %f\n", execution_time);
+
+        clock_gettime(CLOCK_MONOTONIC, &end); 
+        execution_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("Execution Time HW REENTRANT: %f seconds\n", execution_time);
 
         break; 
 
