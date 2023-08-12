@@ -65,6 +65,8 @@ int main() {
     int blockA[16][16]; // current block for comparison
     int blockB[16][16]; //reference block *currently static*
     int bestMatch = 1000; //Keeping track of lowest SAD
+    int *motionVectorX = 0;
+    int *motionVectorY = 0;
 
     int result; //for hw sad
 
@@ -107,11 +109,13 @@ int main() {
                     }
                      // Perform SAD current block
                      // in this example with only one reference block the current position is the same as the motion vector
-                     bestMatch = SAD(blockA, blockB, 0, 0, 0, 0, bestMatch);
+                     bestMatch = SAD(blockA, blockB, 0, 0, 0, 0, bestMatch, *motionVectorX, *motionVectorY);
             }
 
             // print lowest SAD value *add motion vector here*
             printf("Best Match: %d\n", bestMatch);
+            printf("Motion Vector X: %d\n", *motionVectorX);
+            printf("Motion Vector Y: %d\n", *motionVectorY);
 
             // end and print execution time
             clock_gettime(CLOCK_MONOTONIC, &end); 
